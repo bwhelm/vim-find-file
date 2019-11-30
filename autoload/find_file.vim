@@ -147,9 +147,7 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
         let l:files = <SID>GetFilesFromPattern(l:pattern)
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
-        if g:system !=# 'ios'
             call setqflist([], 'a', {'title': 'FileFind List'})
-        endif
         unlet b:quickTime
         unlet b:quickFiles
         copen
