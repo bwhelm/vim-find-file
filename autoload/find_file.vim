@@ -177,16 +177,15 @@ endfunction
 "}}}
 function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
     " If on iOS and iolddocs is requested, set flag
-    let l:oldFileCommand = a:0 && has('ios') && a:1 == 'iolddocs' ? 'IOldFiles' : 'OldFiles'
+    let l:oldFileCommand = a:0 && a:1 == 'iolddocs' ? 'IOldFiles' : 'OldFiles'
     let l:commandPrefix = <SID>ParseMode(a:mode)
-    if a:pattern =~# '\d$'  " If there's a number in the pattern
+    if a:pattern =~# '\d$'  " if pattern ends in a number, try opening that file number
         let l:number = matchstr(a:pattern, '\d\+$')
         let l:pattern = '!\.git ' . matchstr(a:pattern, '.\{-}\ze \d\+$')
         if l:oldFileCommand == 'IOldFiles'
             let l:patternList = split(l:pattern, ' ')
             let l:ioldList = <SID>GetIOldDocsList()
             let l:oldFileList = <SID>FilterFileList(l:ioldList, l:patternList)
-            " echom string(l:oldFileList)
             if l:number <= len(l:oldFileList)  " If number is not larger than length of list
                 let l:ioldFile = matchstr(l:oldFileList[l:number - 1], '/\zs[^/]*$')
                 try
