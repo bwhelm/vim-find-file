@@ -23,18 +23,24 @@ command! -nargs=* SplitOldFiles
 command! -nargs=* VertOldFiles
             \ call find_file#OldFileList('', 'Vert', <q-args>)
 if executable('fasd')
+    command! -nargs=* FasdFiles
+                \ call find_file#Fasd('', <q-args>, 'FasdFiles')
+    command! -nargs=* SplitFasdFiles
+                \ call find_file#Fasd('Split', <q-args>, 'FasdFiles')
+    command! -nargs=* VertFasdFiles
+                \ call find_file#Fasd('Vert', <q-args>, 'FasdFiles')
     command! -nargs=* FasdAll
-                \ call find_file#FasdAll('', <q-args>)
+                \ call find_file#Fasd('', <q-args>, 'FasdAll')
     command! -nargs=* SplitFasdAll
-                \ call find_file#FasdAll('Split', <q-args>)
+                \ call find_file#Fasd('Split', <q-args>, 'FasdAll')
     command! -nargs=* VertFasdAll
-                \ call find_file#FasdAll('Vert', <q-args>)
+                \ call find_file#Fasd('Vert', <q-args>, 'FasdAll')
     command! -nargs=* FasdDirs
-                \ call find_file#FasdDirs('', <q-args>)
+                \ call find_file#Fasd('', <q-args>, 'FasdDirs')
     command! -nargs=* SplitFasdAll
-                \ call find_file#FasdDirs('Split', <q-args>)
+                \ call find_file#Fasd('Split', <q-args>, 'FasdDirs')
     command! -nargs=* VertFasdAll
-                \ call find_file#FasdDirs('Vert', <q-args>)
+                \ call find_file#Fasd('Vert', <q-args>, 'FasdDirs')
 endif
 if has('ios')
     command! -nargs=* -bang IOldFiles

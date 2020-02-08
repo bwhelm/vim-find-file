@@ -229,10 +229,11 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
     endif
 endfunction
 "}}}
-function! s:Fasd(mode, pattern, command) abort  "{{{
+function! find_file#Fasd(mode, pattern, command) abort  "{{{
     " Use `fasd` to find files/directories and lcd to them
-    let l:options = a:command ==# 'FasdDirs' ? 'd' : 'a'
-    echom l:options
+    let l:options = '-lR'
+    let l:options .= a:command ==# 'FasdAll' ? 'a' :
+                \ a:command ==# 'FasdFiles' ? 'f' : 'd'
     let l:commandPrefix = <SID>ParseMode(a:mode)
     if a:pattern =~# '\d$'
         " A number, n, at the end of the search string selects the nth found
@@ -240,8 +241,9 @@ function! s:Fasd(mode, pattern, command) abort  "{{{
         let l:pattern = matchstr(a:pattern, '.\{-}\ze\d*$')
         if l:pattern !=# ''  " If there is a pattern, construct file list and choose nth
             let l:index = matchstr(a:pattern, '\d*$')
-            let l:files = <SID>FilterFileList(split(system('fasd -lR' . l:options), '\n'),
-                    \ split(l:pattern, ' '))
+            " let l:files = <SID>FilterFileList(split(system('fasd ' . l:options), '\n'),
+            "         \ split(l:pattern, ' '))
+            let l:files = split(system('fasd ' . l:options . ' ' . l:pattern), '\n')
             try
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 if a:command ==# 'FasdDirs'
@@ -256,22 +258,24 @@ function! s:Fasd(mode, pattern, command) abort  "{{{
     elseif a:pattern[-1:] =~# '*'
         " A '*' at the end will create a qflist with all found items
         let l:pattern = a:pattern[:-2]
-        let l:files = <SID>FilterFileList(split(system('fasd -lR' . l:options), '\n'),
-                    \ split(l:pattern, ' '))
+        " let l:files = <SID>FilterFileList(split(system('fasd ' . l:options), '\n'),
+        "             \ split(l:pattern, ' '))
+        let l:files = split(system('fasd ' . l:options . ' ' . l:pattern), '\n')
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
             call setqflist([], 'a', {'title': 'FASD List'})
         copen
         return
     endif
-
     " Present numbered list of found files
-    let l:files = <SID>FilterFileList(split(system('fasd -lR' . l:options), '\n'),
-                \ split(a:pattern, ' '))
+    " let l:files = <SID>FilterFileList(split(system('fasd ' . l:options), '\n'),
+    "             \ split(a:pattern, ' '))
+    let l:files = split(system('fasd ' . l:options . ' ' . a:pattern), '\n')
     if len(l:files) == 1
-        execute l:commandPrefix 'find' fnameescape(l:files[0])
-        if a:command ==# 'FasdDirs'
-            silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
+        let l:file = fnameescape(l:files[0])
+        execute l:commandPrefix 'find' l:file
+        if isdirectory(l:file)
+            silent execute '!fasd -A' l:file
         endif
         execute 'lcd' expand('%:p:h')
         return
@@ -279,13 +283,5 @@ function! s:Fasd(mode, pattern, command) abort  "{{{
         call <SID>PrintFileList('', l:files, ':' . a:mode . a:command . ' ' . a:pattern)
         return
     endif
-endfunction
-"}}}
-function! find_file#FasdAll(mode, pattern) abort  "{{{
-    call <SID>Fasd(a:mode, a:pattern, 'FasdAll')
-endfunction
-"}}}
-function! find_file#FasdDirs(mode, pattern) abort  "{{{
-    call <SID>Fasd(a:mode, a:pattern, 'FasdDirs')
 endfunction
 "}}}
