@@ -22,6 +22,20 @@ command! -nargs=* SplitOldFiles
             \ call find_file#OldFileList('', 'Split', <q-args>)
 command! -nargs=* VertOldFiles
             \ call find_file#OldFileList('', 'Vert', <q-args>)
+if executable('fasd')
+    command! -nargs=* FasdAll
+                \ call find_file#FasdAll('', <q-args>)
+    command! -nargs=* SplitFasdAll
+                \ call find_file#FasdAll('Split', <q-args>)
+    command! -nargs=* VertFasdAll
+                \ call find_file#FasdAll('Vert', <q-args>)
+    command! -nargs=* FasdDirs
+                \ call find_file#FasdDirs('', <q-args>)
+    command! -nargs=* SplitFasdAll
+                \ call find_file#FasdDirs('Split', <q-args>)
+    command! -nargs=* VertFasdAll
+                \ call find_file#FasdDirs('Vert', <q-args>)
+endif
 if has('ios')
     command! -nargs=* -bang IOldFiles
                 \ call find_file#OldFileList('<bang>', '', <q-args>, 'iolddocs')
