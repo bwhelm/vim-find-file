@@ -242,6 +242,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         if l:pattern !=# ''  " If there is a pattern, construct file list and choose nth
             let l:index = matchstr(a:pattern, '\d*$')
             let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
+            call filter(l:files, 'v:val !~ "Dropbox\/"')
             try
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 if a:command ==# 'FasdDirs'
@@ -259,6 +260,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         " A '*' at the end will create a qflist with all found items
         let l:pattern = a:pattern[:-2]
         let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
+        call filter(l:files, 'v:val !~ "Dropbox\/"')
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
             call setqflist([], 'a', {'title': 'FASD List'})
@@ -267,6 +269,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     endif
     " Present numbered list of found files
     let l:files = split(system('fasd ' . l:fasdOptions . ' ' . a:pattern), '\n')
+    call filter(l:files, 'v:val !~ "Dropbox\/"')
     if len(l:files) == 1
         let l:file = fnameescape(l:files[0])
         execute l:commandPrefix 'find' l:file
