@@ -136,9 +136,9 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
                 unlet b:quickTime
                 unlet b:quickFiles
                 execute l:commandPrefix 'find' fnameescape(l:files[l:index - 1])
-                if executable('fasd')
-                    silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
-                endif
+                " if executable('fasd')
+                "     silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
+                " endif
                 redraw
                 return
             catch /E684/  " Index out of range: assume number is part of filename
@@ -162,9 +162,9 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
         unlet b:quickTime
         unlet b:quickFiles
         execute l:commandPrefix 'find' fnameescape(l:files[0])
-        if executable('fasd')
-            silent execute '!fasd -A' fnameescape(l:files[0])
-        endif
+        " if executable('fasd')
+        "     silent execute '!fasd -A' fnameescape(l:files[0])
+        " endif
         return
     else
         call <SID>PrintFileList('', l:files, ':' . a:mode . 'FileFind ' . a:pattern)
@@ -252,7 +252,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
             try
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 if a:command ==# 'FasdDirs'
-                    silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
+                    " silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
                     lcd %
                 else
                     lcd %:p:h
@@ -280,7 +280,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         let l:file = fnameescape(l:files[0])
         execute l:commandPrefix 'find' l:file
         if isdirectory(l:file)
-            silent execute '!fasd -A' l:file
+            " silent execute '!fasd -A' l:file
             lcd %
         else
            lcd %:p:h
