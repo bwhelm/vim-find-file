@@ -103,16 +103,20 @@ function! find_file#QuickBuffer(bang, mode, pattern) abort  "{{{
 endfunction
 "}}}
 function! s:GetFilesFromPattern(patternString) abort  "{{{
-    " Take file glob and return list of matching files. Note that `glob`bing and
-    " `map`ping are expensive, so save the filelist for reuse in the next few
-    " seconds, assuming the file list won't change in that time; after that,
-    " generate the list again.
+    " Take file glob and return list of matching files. Glob is taken from
+    " g:findFilesGlobList, a list of wildcard patterns. Note that `glob`bing
+    " and `map`ping are expensive, so save the filelist for reuse in the next
+    " few seconds, assuming the file list won't change in that time; after
+    " that, generate the list again.
     let l:patternList = split(a:patternString, ' ')
     if !exists('b:quickTime') || localtime() - b:quickTime > 20
         echohl Comment
         echo '(Re)creating filelist ...'
         echohl None
-        let b:quickFiles = glob('**/*', 0, 1)
+        let b:quickFiles = []
+        for item in g:findFilesGlobList
+            let b:quickFiles += glob(item, 0, 1)
+        endfor
         call map(b:quickFiles, 'fnamemodify(v:val, ":p")')
     endif
     let l:files = <SID>FilterFileList(copy(b:quickFiles), l:patternList)
@@ -248,7 +252,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         if l:pattern !=# ''  " If there is a pattern, construct file list and choose nth
             let l:index = matchstr(a:pattern, '\d*$')
             let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
-            call filter(l:files, 'v:val !~ "Dropbox\/"')
+            " call filter(l:files, 'v:val !~ "Dropbox\/"')
             try
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 if a:command ==# 'FasdDirs'
@@ -266,7 +270,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         " A '*' at the end will create a qflist with all found items
         let l:pattern = a:pattern[:-2]
         let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
-        call filter(l:files, 'v:val !~ "Dropbox\/"')
+        " call filter(l:files, 'v:val !~ "Dropbox\/"')
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
             call setqflist([], 'a', {'title': 'FASD List'})
@@ -275,7 +279,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     endif
     " Present numbered list of found files
     let l:files = split(system('fasd ' . l:fasdOptions . ' ' . a:pattern), '\n')
-    call filter(l:files, 'v:val !~ "Dropbox\/"')
+    " call filter(l:files, 'v:val !~ "Dropbox\/"')
     if len(l:files) == 1
         let l:file = fnameescape(l:files[0])
         execute l:commandPrefix 'find' l:file

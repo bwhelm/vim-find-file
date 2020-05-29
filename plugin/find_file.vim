@@ -49,6 +49,11 @@ if executable('fasd')
     nnoremap ,gd :FasdDirs 
     nnoremap ,ga :FasdAll 
 endif
+
+if !exists('g:findFilesGlobList')
+    g:findFilesGlobList = ['**/*']
+endif
+
 if has('ios')
     command! -nargs=* -bang IOldFiles
                 \ call find_file#OldFileList('<bang>', '', <q-args>, 'iolddocs')
