@@ -114,6 +114,7 @@ function! s:GetFilesFromPattern(patternString) abort  "{{{
         echo '(Re)creating filelist ...'
         echohl None
         let b:quickFiles = []
+        " FIXME: Use `globpath()` instead!
         for item in g:findFilesGlobList
             let b:quickFiles += glob(item, 0, 1)
         endfor
@@ -148,13 +149,13 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
             catch /E684/  " Index out of range: assume number is part of filename
             endtry
         endif
-    elseif a:pattern[-1:] =~# '*'
+    elseif a:pattern[-1:] ==# '*'
         " A '*' at the end will create a qflist with all found items
         let l:pattern = a:pattern[:-2]
         let l:files = <SID>GetFilesFromPattern(l:pattern)
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
-            call setqflist([], 'a', {'title': 'FileFind List'})
+        call setqflist([], 'a', {'title': 'FileFind List'})
         unlet b:quickTime
         unlet b:quickFiles
         copen
@@ -172,6 +173,60 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
         return
     else
         call <SID>PrintFileList('', l:files, ':' . a:mode . 'FileFind ' . a:pattern)
+        return
+    endif
+endfunction
+"}}}
+function! find_file#AndGrep(pattern, scope) abort  "{{{
+    " Finds files having all of the terms in a:terms somewhere in their
+    " contents. Can keep adding multiple search terms to narrow the search,
+    " can select a file by number, or can send all files to quickfix list.
+    let l:files = glob(a:scope, 0, 1)
+    if a:pattern =~# '\d$'
+        " A number, n, at the end of the string selects the nth found file.
+        let l:pattern = matchstr(a:pattern, '.\{-}\ze\d*$')
+        if l:pattern !=# ''
+            let l:index = matchstr(a:pattern, '\d*$')
+            for term in split(l:pattern)
+                let l:files = systemlist('rg -l "' . term . '" ' .
+                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
+                            " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+            endfor
+            call sort(l:files)
+            try
+                execute 'edit' fnameescape(l:files[l:index - 1])
+                redraw
+                return
+            catch /E684/  " Index out of range: assume number is part of filename
+            endtry
+        endif
+    else
+        if a:pattern[-1:] ==# '*'
+            " A '*' at the end will create a qflist with all found items
+            for term in split(a:pattern[:-2])
+                let l:files = systemlist('rg -l "' . term . '" ' .
+                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
+                            " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+            endfor
+            call sort(l:files)
+            let l:qflist = map(l:files, '{"filename": v:val}')
+            call setqflist(l:qflist)
+            call setqflist([], 'a', {'title': 'AndGrep List'})
+            copen
+            return
+        endif
+        for term in split(a:pattern)
+            let l:files = systemlist('rg -l "' . term . '" ' .
+                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
+                        " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+        endfor
+        call sort(l:files)
+        if len(l:files) == 1
+            execute 'edit' fnameescape(l:files[0])
+        else
+            " Present numbered list of found files
+            call <SID>PrintFileList('', l:files, ':AndGrep ' . a:pattern)
+        endif
         return
     endif
 endfunction

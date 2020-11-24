@@ -49,6 +49,7 @@ if executable('fasd')
     nnoremap ,gd :FasdDirs 
     nnoremap ,ga :FasdAll 
 endif
+command! -nargs=* AndGrep call find_file#AndGrep(<q-args>, '*')
 
 if !exists('g:findFilesGlobList')
     g:findFilesGlobList = ['**/*']
