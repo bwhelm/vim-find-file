@@ -188,7 +188,7 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
         if l:pattern !=# ''
             let l:index = matchstr(a:pattern, '\d*$')
             for term in split(l:pattern)
-                let l:files = systemlist('rg -l "' . term . '" ' .
+                let l:files = systemlist('rg -li "' . term . '" ' .
                         \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
                             " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
             endfor
@@ -204,19 +204,19 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
         if a:pattern[-1:] ==# '*'
             " A '*' at the end will create a qflist with all found items
             for term in split(a:pattern[:-2])
-                let l:files = systemlist('rg -l "' . term . '" ' .
+                let l:files = systemlist('rg -li "' . term . '" ' .
                         \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
                             " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
             endfor
             call sort(l:files)
             let l:qflist = map(l:files, '{"filename": v:val}')
             call setqflist(l:qflist)
-            call setqflist([], 'a', {'title': 'AndGrep List'})
+            call setqflist([], 'a', {'title': 'AndGrep: ' . a:pattern[:-2]})
             copen
             return
         endif
         for term in split(a:pattern)
-            let l:files = systemlist('rg -l "' . term . '" ' .
+            let l:files = systemlist('rg -li "' . term . '" ' .
                         \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
                         " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
         endfor
@@ -233,7 +233,7 @@ endfunction
 "}}}
 function! s:GetIOldDocsList() abort  "{{{
     redir => l:ioldString
-    silent iolddocs
+    silent execute 'iolddocs'
     redir END
     let l:ioldList = split(l:ioldString, '\n')
     call map(l:ioldList, 'matchstr(v:val, ''\d\+: \zs.*'')')
