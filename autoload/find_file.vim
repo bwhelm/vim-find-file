@@ -48,7 +48,7 @@ function! s:PrintFileList(bang, files, command) abort  "{{{
             endif
         endfor
         if len(a:files) > l:height
-            echohl Comment | echo '... [and more] ...'
+            echohl Comment | echo '... [and ' . string(len(a:files) - l:height) . ' more] ...'
         endif
         echohl None
     endif
@@ -177,6 +177,14 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
     endif
 endfunction
 "}}}
+function! s:formatTerm(term) abort  "{{{
+    if a:term =~# "^+"
+        return '"^tags:.*' . a:term[1:] . '"'
+    else
+        return '"' . a:term . '"'
+    endif
+endfunction
+"}}}
 function! find_file#AndGrep(pattern, scope) abort  "{{{
     " Finds files having all of the terms in a:terms somewhere in their
     " contents. Can keep adding multiple search terms to narrow the search,
@@ -188,9 +196,8 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
         if l:pattern !=# ''
             let l:index = matchstr(a:pattern, '\d*$')
             for term in split(l:pattern)
-                let l:files = systemlist('rg -li "' . term . '" ' .
-                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
-                            " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+                let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
+                        \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
             endfor
             call sort(l:files)
             try
@@ -204,9 +211,8 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
         if a:pattern[-1:] ==# '*'
             " A '*' at the end will create a qflist with all found items
             for term in split(a:pattern[:-2])
-                let l:files = systemlist('rg -li "' . term . '" ' .
-                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
-                            " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+                let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
+                        \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
             endfor
             call sort(l:files)
             let l:qflist = map(l:files, '{"filename": v:val}')
@@ -216,9 +222,8 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
             return
         endif
         for term in split(a:pattern)
-            let l:files = systemlist('rg -li "' . term . '" ' .
-                        \ join(map(copy(l:files), {key, val -> fnameescape(val)})))
-                        " \ join(map(copy(l:files), function('<SID>myFilenameEscape'))))
+            let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
+                    \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
         endfor
         call sort(l:files)
         if len(l:files) == 1
