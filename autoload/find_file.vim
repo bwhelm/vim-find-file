@@ -140,10 +140,7 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
             try
                 unlet b:quickTime
                 unlet b:quickFiles
-                execute l:commandPrefix 'find' fnameescape(l:files[l:index - 1])
-                " if executable('fasd')
-                "     silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
-                " endif
+                execute 'silent' l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 redraw
                 return
             catch /E684/  " Index out of range: assume number is part of filename
@@ -166,10 +163,7 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
     if len(l:files) == 1
         unlet b:quickTime
         unlet b:quickFiles
-        execute l:commandPrefix 'find' fnameescape(l:files[0])
-        " if executable('fasd')
-        "     silent execute '!fasd -A' fnameescape(l:files[0])
-        " endif
+        execute 'silent' l:commandPrefix 'edit' fnameescape(l:files[0])
         return
     else
         call <SID>PrintFileList('', l:files, ':' . a:mode . 'FileFind ' . a:pattern)
@@ -272,7 +266,7 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
             let l:oldFileList = <SID>FilterFileList(copy(v:oldfiles), split(l:pattern, ' '))
             call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
             if l:number <= len(l:oldFileList)
-                execute l:commandPrefix 'find' fnameescape(l:oldFileList[l:number - 1])
+                execute 'silent' l:commandPrefix 'edit' fnameescape(l:oldFileList[l:number - 1])
                 return
             endif  " If number is larger, treat number as part of pattern
         endif
@@ -290,7 +284,7 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
             let l:ioldFile = matchstr(l:oldFileList[0], '/\zs[^/]*$')
             execute l:commandPrefix 'iolddocs /' . l:ioldFile . '/'
         else
-            execute l:commandPrefix 'find' fnameescape(l:oldFileList[0])
+            execute 'silent' l:commandPrefix 'edit' fnameescape(l:oldFileList[0])
         endif
         return
     else  " Present numbered list of found files
@@ -342,7 +336,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     " call filter(l:files, 'v:val !~ "Dropbox\/"')
     if len(l:files) == 1
         let l:file = fnameescape(l:files[0])
-        execute l:commandPrefix 'find' l:file
+        execute 'silent' l:commandPrefix 'edit' l:file
         if isdirectory(l:file)
             " silent execute '!fasd -A' l:file
             lcd %
