@@ -28,8 +28,10 @@ function! s:PrintFileList(bang, files, command) abort  "{{{
         call feedkeys(a:command)
         return
     else
-        let l:width = winwidth(0)
-        " let l:height = 58
+        split new  " Create a temporary window
+        wincmd J   " Push to bottom, spanning full width
+        let l:width = winwidth(0)  " Now read full width
+        bwipeout  " Get rid of temporary window
         let l:height = winheight(0) - 1
         for l:index in range(min([len(a:files), l:height]))
             echohl WarningMsg | echo l:index + 1 . '. '
