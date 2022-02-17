@@ -132,6 +132,7 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
     " narrow the search, can select a file by number, or can send all files to
     " quickfix list.
     let l:commandPrefix = <SID>ParseMode(a:mode)
+    let l:originalWindow = win_getid()
     if a:pattern =~# '\d$'
         " A number, n, at the end of the search string selects the nth found
         " file.
@@ -142,6 +143,7 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
             try
                 unlet b:quickTime
                 unlet b:quickFiles
+                call win_gotoid(l:originalWindow)
                 execute 'silent' l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 redraw
                 return
@@ -165,10 +167,12 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
     if len(l:files) == 1
         unlet b:quickTime
         unlet b:quickFiles
+        call win_gotoid(l:originalWindow)
         execute 'silent' l:commandPrefix 'edit' fnameescape(l:files[0])
         return
     else
         call <SID>PrintFileList('', l:files, ':' . a:mode . 'FileFind ' . a:pattern)
+        call win_gotoid(l:originalWindow)
         return
     endif
 endfunction
