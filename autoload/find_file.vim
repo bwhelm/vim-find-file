@@ -9,9 +9,9 @@ function! s:FilterFileList(fileList, patternList) abort  "{{{
     let l:fileList = a:fileList
     for l:item in a:patternList
         if l:item[0] ==# '!'
-            call filter(l:fileList, 'v:val !~? l:item[1:]')
+            call filter(l:fileList, 'fnamemodify(v:val, ":t") !~? l:item[1:]')
         else
-            call filter(l:fileList, 'v:val =~? l:item')
+            call filter(l:fileList, 'fnamemodify(v:val, ":t") =~? l:item')
         endif
     endfor
     return l:fileList
@@ -141,11 +141,11 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
             let l:index = matchstr(a:pattern, '\d*$')
             let l:files = <SID>GetFilesFromPattern(l:pattern)
             try
-                unlet b:quickTime
-                unlet b:quickFiles
                 call win_gotoid(l:originalWindow)
                 execute 'silent' l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 redraw
+                unlet b:quickTime
+                unlet b:quickFiles
                 return
             catch /E684/  " Index out of range: assume number is part of filename
             endtry
