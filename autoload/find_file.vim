@@ -147,7 +147,9 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
                 unlet b:quickTime
                 unlet b:quickFiles
                 return
-            catch /E684/  " Index out of range: assume number is part of filename
+            catch /E684/  " Index out of range: assume number is part of filename and fall through
+            catch /E108/  " No such variabla: can't `unlet`, so return
+                return
             endtry
         endif
     elseif a:pattern[-1:] ==# '*'
@@ -189,51 +191,61 @@ function! find_file#AndGrep(pattern, scope) abort  "{{{
     " Finds files having all of the terms in a:terms somewhere in their
     " contents. Can keep adding multiple search terms to narrow the search,
     " can select a file by number, or can send all files to quickfix list.
+    let l:grepprog = executable('rg') ? 'rg --vimgrep --smart-case' : 'grep -il'
+    let l:originalWindow = win_getid()
     let l:files = glob(a:scope, 0, 1)
-    if a:pattern =~# '\d$'
+    let l:patternList = split(a:pattern)
+    if l:patternList[-1] =~ '\d\+'
         " A number, n, at the end of the string selects the nth found file.
-        let l:pattern = matchstr(a:pattern, '.\{-}\ze\d*$')
-        if l:pattern !=# ''
-            let l:index = matchstr(a:pattern, '\d*$')
-            for term in split(l:pattern)
-                let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
+        let l:index = remove(l:patternList, -1)
+        if len(l:patternList) > 0
+            for l:term in l:patternList
+                let l:files = systemlist(l:grepprog . ' ' . <SID>formatTerm(l:term) . ' ' .
                         \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
             endfor
             call sort(l:files)
             try
+                call win_gotoid(l:originalWindow)
                 execute 'edit' fnameescape(l:files[l:index - 1])
                 redraw
                 return
             catch /E684/  " Index out of range: assume number is part of filename
+                let l:patternList = split(a:pattern)
             endtry
         endif
-    else
-        if a:pattern[-1:] ==# '*'
-            " A '*' at the end will create a qflist with all found items
-            for term in split(a:pattern[:-2])
-                let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
+    endif
+    if l:patternList[-1][-1] ==# '*'
+        " A '*' at the end will create a qflist with all found items
+        let l:patternList[-1] = l:patternList[-1][:-2]  " Drop the '*'
+        for l:term in l:patternList
+            let l:files = systemlist(l:grepprog . ' ' . <SID>formatTerm(l:term) . ' ' .
                         \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
-            endfor
+        endfor
+        if len(l:files) > 0
+            " Display QF list only if at least one file found; otherwise fall through
             call sort(l:files)
             let l:qflist = map(l:files, '{"filename": v:val}')
             call setqflist(l:qflist)
             call setqflist([], 'a', {'title': 'AndGrep: ' . a:pattern[:-2]})
+            call win_gotoid(l:originalWindow)
             copen
             return
         endif
-        for term in split(a:pattern)
-            let l:files = systemlist(&grepprg . ' -l ' . <SID>formatTerm(term) . ' ' .
-                    \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
-        endfor
-        call sort(l:files)
-        if len(l:files) == 1
-            execute 'edit' fnameescape(l:files[0])
-        else
-            " Present numbered list of found files
-            call <SID>PrintFileList('', l:files, ':AndGrep ' . a:pattern)
-        endif
-        return
     endif
+    for l:term in l:patternList
+        let l:files = systemlist(l:grepprog . ' ' . <SID>formatTerm(l:term) . ' ' .
+                    \ join(map(copy(l:files), {key, val -> '"' . val . '"'})))
+    endfor
+    call sort(l:files)
+    if len(l:files) == 1  " If only one, open it!
+        call win_gotoid(l:originalWindow)
+        execute 'edit' fnameescape(l:files[0])
+    else
+        " Present numbered list of found files
+        call <SID>PrintFileList('', l:files, ':AndGrep ' . a:pattern)
+        call win_gotoid(l:originalWindow)
+    endif
+    return
 endfunction
 "}}}
 function! s:GetIOldDocsList() abort  "{{{
@@ -249,6 +261,7 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
     " If on iOS and iolddocs is requested, set flag
     let l:oldFileCommand = a:0 && a:1 == 'iolddocs' ? 'IOldFiles' : 'OldFiles'
     let l:commandPrefix = <SID>ParseMode(a:mode)
+    let l:originalWindow = win_getid()
     if a:pattern =~# '\d$'  " if pattern ends in a number, try opening that file number
         let l:number = matchstr(a:pattern, '\d\+$')
         let l:pattern = '!\.git ' . matchstr(a:pattern, '.\{-}\ze \d\+$')
@@ -259,11 +272,13 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
             if l:number <= len(l:oldFileList)  " If number is not larger than length of list
                 let l:ioldFile = matchstr(l:oldFileList[l:number - 1], '/\zs[^/]*$')
                 try
+                    call win_gotoid(l:originalWindow)
                     execute l:commandPrefix 'iolddocs' . a:bang . ' /' . l:ioldFile . '/'
                 catch
                     echohl WarningMsg
                     echo 'Cannot open file; removing from old files list.'
                     echohl None
+                    call win_gotoid(l:originalWindow)
                     execute 'iolddocs! /' . l:ioldFile . '/'
                 endtry
                 return
@@ -272,6 +287,7 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
             let l:oldFileList = <SID>FilterFileList(copy(v:oldfiles), split(l:pattern, ' '))
             call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
             if l:number <= len(l:oldFileList)
+                call win_gotoid(l:originalWindow)
                 execute 'silent' l:commandPrefix 'edit' fnameescape(l:oldFileList[l:number - 1])
                 return
             endif  " If number is larger, treat number as part of pattern
@@ -288,13 +304,16 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
     if len(l:oldFileList) == 1
         if l:oldFileCommand == 'IOldFiles'
             let l:ioldFile = matchstr(l:oldFileList[0], '/\zs[^/]*$')
+            call win_gotoid(l:originalWindow)
             execute l:commandPrefix 'iolddocs /' . l:ioldFile . '/'
         else
+            call win_gotoid(l:originalWindow)
             execute 'silent' l:commandPrefix 'edit' fnameescape(l:oldFileList[0])
         endif
         return
     else  " Present numbered list of found files
         call <SID>PrintFileList(a:bang, l:oldFileList, ':' . a:mode . l:oldFileCommand . a:bang . ' ' . a:pattern)
+        call win_gotoid(l:originalWindow)
         return
     endif
 endfunction
@@ -305,6 +324,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     let l:fasdOptions .= a:command ==# 'FasdAll' ? 'a' :
                 \ a:command ==# 'FasdFiles' ? 'f' : 'd'
     let l:commandPrefix = <SID>ParseMode(a:mode)
+    let l:originalWindow = win_getid()
     if a:pattern =~# '\d$'
         " A number, n, at the end of the search string selects the nth found
         " file.
@@ -314,6 +334,7 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
             let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
             " call filter(l:files, 'v:val !~ "Dropbox\/"')
             try
+                call win_gotoid(l:originalWindow)
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
                 if a:command ==# 'FasdDirs'
                     " silent execute '!fasd -A' fnameescape(l:files[l:index - 1])
@@ -333,7 +354,8 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         " call filter(l:files, 'v:val !~ "Dropbox\/"')
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
-            call setqflist([], 'a', {'title': 'FASD List'})
+        call setqflist([], 'a', {'title': 'FASD List'})
+        call win_gotoid(l:originalWindow)
         copen
         return
     endif
@@ -342,16 +364,18 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     " call filter(l:files, 'v:val !~ "Dropbox\/"')
     if len(l:files) == 1
         let l:file = fnameescape(l:files[0])
+        call win_gotoid(l:originalWindow)
         execute 'silent' l:commandPrefix 'edit' l:file
         if isdirectory(l:file)
             " silent execute '!fasd -A' l:file
             lcd %
         else
-           lcd %:p:h
+            lcd %:p:h
         endif
         return
     else
         call <SID>PrintFileList('', l:files, ':' . a:mode . a:command . ' ' . a:pattern)
+        call win_gotoid(l:originalWindow)
         return
     endif
 endfunction
