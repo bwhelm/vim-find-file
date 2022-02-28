@@ -108,10 +108,11 @@ function! s:GetFilesFromPattern(patternString) abort  "{{{
     " Take file glob and return list of matching files. Glob is taken from
     " g:findFilesGlobList, a list of wildcard patterns. Note that `glob`bing
     " and `map`ping are expensive, so save the filelist for reuse in the next
-    " few seconds, assuming the file list won't change in that time; after
+    " few minutes, assuming the file list won't change in that time; after
     " that, generate the list again.
+    let l:globTime = 300  " Amount of time within which to reuse filelist
     let l:patternList = split(a:patternString, ' ')
-    if !exists('b:quickTime') || localtime() - b:quickTime > 20
+    if !exists('b:quickTime') || localtime() - b:quickTime > l:globTime
         echohl Comment
         echo '(Re)creating filelist ...'
         echohl None
@@ -147,9 +148,9 @@ function! find_file#QuickFind(mode, pattern) abort  "{{{
                 unlet b:quickTime
                 unlet b:quickFiles
                 return
-            catch /E684/  " Index out of range: assume number is part of filename and fall through
             catch /E108/  " No such variabla: can't `unlet`, so return
                 return
+            catch /E684/  " Index out of range: assume number is part of filename and fall through
             endtry
         endif
     elseif a:pattern[-1:] ==# '*'
