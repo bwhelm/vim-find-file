@@ -121,7 +121,7 @@ function! s:GetFilesFromPattern(patternString) abort  "{{{
         for item in g:findFilesGlobList
             let b:quickFiles += glob(item, 0, 1)
         endfor
-        call map(b:quickFiles, 'fnamemodify(v:val, ":p")')
+        " call map(b:quickFiles, 'fnamemodify(v:val, ":p")')
     endif
     let l:files = <SID>FilterFileList(copy(b:quickFiles), l:patternList)
     let b:quickTime = localtime()
@@ -286,7 +286,8 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
             endif  " If number is larger, treat number as part of pattern
         else  " If not IOldFiles
             let l:oldFileList = <SID>FilterFileList(copy(v:oldfiles), split(l:pattern, ' '))
-            call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
+            " call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
+            call filter(l:oldFileList, 'filereadable(v:val)')
             if l:number <= len(l:oldFileList)
                 call win_gotoid(l:originalWindow)
                 execute 'silent' l:commandPrefix 'edit' fnameescape(l:oldFileList[l:number - 1])
@@ -300,7 +301,8 @@ function! find_file#OldFileList(bang, mode, pattern, ...) abort  "{{{
         let l:oldFileList = <SID>FilterFileList(l:ioldList, l:patternList)
     else
         let l:oldFileList = <SID>FilterFileList(copy(v:oldfiles), l:patternList)
-        call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
+        " call filter(l:oldFileList, 'filereadable(fnamemodify(v:val, ":p"))')
+        call filter(l:oldFileList, 'filereadable(v:val)')
     endif
     if len(l:oldFileList) == 1
         if l:oldFileCommand == 'IOldFiles'
