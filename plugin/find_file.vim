@@ -11,11 +11,11 @@ command! -nargs=* -bang SplitBufferFind
 command! -nargs=* -bang VertBufferFind
             \ call find_file#QuickBuffer('<bang>', 'Vert', <q-args>)
 command! -nargs=* -complete=file_in_path FileFind
-            \ call find_file#QuickFind('', <q-args>)
+            \ call find_file#QuickFile('', <q-args>)
 command! -nargs=* -complete=file_in_path SplitFileFind
-            \ call find_file#QuickFind('Split', <q-args>)
+            \ call find_file#QuickFile('Split', <q-args>)
 command! -nargs=* -complete=file_in_path VertFileFind
-            \ call find_file#QuickFind('Vert', <q-args>)
+            \ call find_file#QuickFile('Vert', <q-args>)
 command! -nargs=* OldFiles
             \ call find_file#OldFileList('', '', <q-args>)
 command! -nargs=* SplitOldFiles
@@ -56,8 +56,20 @@ endif
 command! -nargs=* AndGrep call find_file#AndGrep(<q-args>, '*')
 
 if !exists('g:findFilesGlobList')
-    g:findFilesGlobList = ['**/*']
+    let g:findFilesGlobList = ['**/*']
 endif
+
+if !exists('g:findFilesIgnoreList')
+    " Default is 'wildignore' list, taking out wildcards
+    let g:findFilesIgnoreList = split(substitute(&wildignore, '\*', '', 'g'), ',')
+endif
+" Need to append each item with '!' so that they get ignored
+try
+    if g:findFilesIgnoreList[0][0] !=# "!"
+        call map(g:findFilesIgnoreList, '"!" .. v:val')
+    endif
+catch /684
+endtry
 
 if has('ios')
     command! -nargs=* -bang IOldFiles

@@ -7,7 +7,7 @@ function! s:FilterFileList(fileList, patternList) abort  "{{{
     " Filter a list of files using pattern. If first character of the pattern
     " is '!', keep items that do *not* match the rest of the pattern.
     let l:fileList = a:fileList
-    for l:item in a:patternList
+    for l:item in extend(a:patternList, g:findFilesIgnoreList)
         if l:item[0] ==# '!'
             call filter(l:fileList, 'fnamemodify(v:val, ":t") !~? l:item[1:]')
         else
@@ -128,7 +128,7 @@ function! s:GetFilesFromPattern(patternString) abort  "{{{
     return l:files
 endfunction
 "}}}
-function! find_file#QuickFind(mode, pattern) abort  "{{{
+function! find_file#QuickFile(mode, pattern) abort  "{{{
     " Embellished :find function. Can keep adding multiple search terms to
     " narrow the search, can select a file by number, or can send all files to
     " quickfix list.
@@ -335,7 +335,6 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         if l:pattern !=# ''  " If there is a pattern, construct file list and choose nth
             let l:index = matchstr(a:pattern, '\d*$')
             let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
-            " call filter(l:files, 'v:val !~ "Dropbox\/"')
             try
                 call win_gotoid(l:originalWindow)
                 execute l:commandPrefix 'edit' fnameescape(l:files[l:index - 1])
@@ -354,7 +353,6 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
         " A '*' at the end will create a qflist with all found items
         let l:pattern = a:pattern[:-2]
         let l:files = split(system('fasd ' . l:fasdOptions . ' ' . l:pattern), '\n')
-        " call filter(l:files, 'v:val !~ "Dropbox\/"')
         let l:qflist = map(l:files, '{"filename": v:val}')
         call setqflist(l:qflist)
         call setqflist([], 'a', {'title': 'FASD List'})
@@ -364,7 +362,8 @@ function! find_file#Fasd(mode, pattern, command) abort  "{{{
     endif
     " Present numbered list of found files
     let l:files = split(system('fasd ' . l:fasdOptions . ' ' . a:pattern), '\n')
-    " call filter(l:files, 'v:val !~ "Dropbox\/"')
+    " Filter files using g:findFilesIgnoreList
+    let l:files = <SID>FilterFileList(l:files, [])
     if len(l:files) == 1
         let l:file = fnameescape(l:files[0])
         call win_gotoid(l:originalWindow)
