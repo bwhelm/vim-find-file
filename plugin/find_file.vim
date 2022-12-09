@@ -68,7 +68,7 @@ try
     if g:findFilesIgnoreList[0][0] !=# "!"
         call map(g:findFilesIgnoreList, '"!" .. v:val')
     endif
-catch /684
+catch /684/
 endtry
 
 if has('ios')
