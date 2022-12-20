@@ -112,16 +112,12 @@ function! s:GetFilesFromPattern(patternString) abort  "{{{
     " that, generate the list again.
     let l:globTime = 300  " Amount of time within which to reuse filelist
     let l:patternList = split(a:patternString, ' ')
+
     if !exists('b:quickTime') || localtime() - b:quickTime > l:globTime
         echohl Comment
         echo '(Re)creating filelist ...'
         echohl None
-        let b:quickFiles = []
-        " FIXME: Use `globpath()` instead!
-        for item in g:findFilesGlobList
-            let b:quickFiles += glob(item, 0, 1)
-        endfor
-        " call map(b:quickFiles, 'fnamemodify(v:val, ":p")')
+        let b:quickFiles = split(globpath(join(g:findFilesGlobList, ','), '*'), '\n')
     endif
     let l:files = <SID>FilterFileList(copy(b:quickFiles), l:patternList)
     let b:quickTime = localtime()
