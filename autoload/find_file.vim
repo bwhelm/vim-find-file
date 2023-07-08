@@ -7,7 +7,7 @@ function! s:FilterFileList(fileList, patternList) abort  "{{{
     " Filter a list of files using pattern. If first character of the pattern
     " is '!', keep items that do *not* match the rest of the pattern.
     let l:fileList = a:fileList
-    for l:item in extend(a:patternList, g:findFilesIgnoreList)
+    for l:item in extend(a:patternList, map(deepcopy(g:findFilesIgnoreList), '"!" . v:val'))
         if l:item[0] ==# '!'
             call filter(l:fileList, 'fnamemodify(v:val, ":t") !~? l:item[1:]')
         else
