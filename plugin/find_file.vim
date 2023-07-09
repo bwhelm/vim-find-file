@@ -22,11 +22,12 @@ command! -nargs=* SplitOldFiles
             \ call find_file#OldFileList('', 'Split', <q-args>)
 command! -nargs=* VertOldFiles
             \ call find_file#OldFileList('', 'Vert', <q-args>)
-nnoremap <Leader>ff :FileFind 
-nnoremap <Leader>ft :FileFind \.tex 
-nnoremap <Leader>fm :FileFind \.md 
-nnoremap <Leader>fv :FileFind \.vim 
-nnoremap <Leader>fp :FileFind \.py 
+nnoremap <Leader>ff :FileFind<Space>
+nnoremap <Leader>fd :FileFind \.\(tex\\|md\)$<Space>
+nnoremap <Leader>ft :FileFind \.tex$<Space>
+nnoremap <Leader>fm :FileFind \.md$<Space>
+nnoremap <Leader>fv :FileFind \.vim$<Space>
+nnoremap <Leader>fp :FileFind \.py$<Space>
 if executable('fasd')
     command! -nargs=* FasdFiles
                 \ call find_file#Fasd('', <q-args>, 'FasdFiles')
@@ -50,7 +51,7 @@ if executable('fasd')
                 \ call find_file#Fasd('Vert', <q-args>, 'FasdAll')
 
     nnoremap ,fF :FasdFiles 
-    nnoremap ,fd :FasdDirs 
+    nnoremap ,fD :FasdDirs 
     nnoremap ,fa :FasdAll 
 endif
 command! -nargs=* AndGrep call find_file#AndGrep(<q-args>, '*')
