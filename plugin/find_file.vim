@@ -22,12 +22,14 @@ command! -nargs=* SplitOldFiles
             \ call find_file#OldFileList('', 'Split', <q-args>)
 command! -nargs=* VertOldFiles
             \ call find_file#OldFileList('', 'Vert', <q-args>)
-nnoremap <Leader>ff :FileFind<Space>
-nnoremap <Leader>fd :FileFind \.\(tex\\|md\)$<Space>
-nnoremap <Leader>ft :FileFind \.tex$<Space>
-nnoremap <Leader>fm :FileFind \.md$<Space>
-nnoremap <Leader>fv :FileFind \.vim$<Space>
-nnoremap <Leader>fp :FileFind \.py$<Space>
+if !hasmapto("FileFind")
+    nnoremap <Leader>ff :FileFind<Space>
+    nnoremap <Leader>fd :FileFind \.\(tex\\|md\)$<Space>
+    nnoremap <Leader>ft :FileFind \.tex$<Space>
+    nnoremap <Leader>fm :FileFind \.md$<Space>
+    nnoremap <Leader>fv :FileFind \.vim$<Space>
+    nnoremap <Leader>fp :FileFind \.py$<Space>
+endif
 if executable('fasd')
     command! -nargs=* FasdFiles
                 \ call find_file#Fasd('', <q-args>, 'FasdFiles')
@@ -50,9 +52,15 @@ if executable('fasd')
     command! -nargs=* VertFasdAll
                 \ call find_file#Fasd('Vert', <q-args>, 'FasdAll')
 
-    nnoremap ,fF :FasdFiles 
-    nnoremap ,fD :FasdDirs 
-    nnoremap ,fa :FasdAll 
+    if !hasmapto("FasdFiles")
+        nnoremap <Leader>fF :FasdFiles 
+    endif
+    if !hasmapto("FasdDirs")
+        nnoremap <Leader>fD :FasdDirs 
+    endif
+    if !hasmapto("FasdAll")
+        nnoremap <Leader>fa :FasdAll 
+    endif
 endif
 command! -nargs=* AndGrep call find_file#AndGrep(<q-args>, '*')
 
